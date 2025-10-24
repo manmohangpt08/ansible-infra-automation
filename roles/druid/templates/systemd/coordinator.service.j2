@@ -1,0 +1,23 @@
+[Unit]
+Description=Druid Coordinator
+Requires=network.target remote-fs.target
+After=network.target remote-fs.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/druid/
+Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-11.0.25.0.9-3.el9.x86_64"
+Environment="DRUID_HOME=/opt/druid"
+Environment="CONFIG_DIR=/opt/druid/conf/druid/single-server/current"
+Environment="COMMOM_DIR=/opt/druid/conf/druid/single-server/current"
+Environment="MODULE_NAME=coordinator-overlord"
+
+ExecStart=/usr/bin/java --add-opens java.base/java.lang=ALL-UNNAMED -cp /opt/druid/conf/druid/single-server/current/coordinator-overlord:/opt/druid/conf/druid/single-server/current/_common:/opt/druid/lib/* -Djim.config=/opt/druid/conf/druid/single-server/current/coordinator-overlord/jvm.conf org.apache.druid.cli.Main server coordinator
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=druid_coordinator
+
+[Install]
+WantedBy=multi-user.target

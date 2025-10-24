@@ -1,0 +1,5 @@
+- name: Install and Configure Druid
+  hosts: druid_all
+  become: yes
+  roles:
+    - druid

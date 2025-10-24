@@ -1,0 +1,23 @@
+[Unit]
+Description=Druid Middlemanager
+Requires=network.target remote-fs.target
+After=network.target remote-fs.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/druid/
+Environment="JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.382.b05-1.amzn2.0.2.x86_64/jre"
+Environment="DRUID_HOME=/opt/druid"
+Environment="CONFIG_DIR=/opt/druid/conf/druid/single-server/current"
+Environment="COMMOM_DIR=/opt/druid/conf/druid/single-server/current"
+Environment="MODULE_NAME=middleManager"
+
+ExecStart=/usr/bin/java -cp /opt/druid/conf/druid/single-server/current/middleManager:/opt/druid/conf/druid/single-server/current/_common:/opt/druid/lib/* -Djim.config=/opt/druid/conf/druid/single-server/current/middleManager/jvm.config org.apache.druid.cli.Main server middleManager
+
+StandardOutput=append:/var/log/druid/middleManager.log
+StandardError=append:/var/log/druid/middleManager-error.log
+SyslogIdentifier=druid_middleManager
+
+[Install]
+WantedBy=multi-user.target

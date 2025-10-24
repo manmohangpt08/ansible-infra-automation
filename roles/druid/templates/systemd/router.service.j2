@@ -1,0 +1,17 @@
+[Unit]
+Description=Druid Router
+Requires=network.target remote-fs.target
+After=network.target remote-fs.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/druid/
+ExecStart=/usr/bin/java -cp /opt/druid/conf/druid/single-server/current/router:/opt/druid/conf/druid/single-server/current/_common:/opt/druid/lib/* -Djim.config=/opt/druid/conf/druid/single-server/current/router/jvm.config org.apache.druid.cli.Main server router
+
+StandardOutput=append:/var/log/druid/router.log
+StandardError=append:/var/log/druid/router-error.log
+SyslogIdentifier=druid_router
+
+[Install]
+WantedBy=multi-user.target

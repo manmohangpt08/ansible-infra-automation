@@ -1,0 +1,13 @@
+---
+- name: "Copying files to Remote Server"
+  hosts: all
+
+  tasks:
+  - name: "Copy Files"
+    copy:
+      src: /etc/ansible/ansible.cfg
+      dest: /root/
+      owner: ansible
+      group: ansible
+      mode: 0777
+      backup: true

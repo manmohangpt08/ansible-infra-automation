@@ -1,0 +1,87 @@
+- name: Install Java
+  yum:
+    name:
+      - epel-release
+      - java-11-openjdk
+      - vim
+      - tar
+      - zip
+      - unzip
+      - nc
+      - net-tools
+    state: present
+
+- name: Find JAVA_HOME dynamically
+  shell: dirname $(dirname $(readlink -f $(which java)))
+  register: java_path
+
+- name: Set JAVA_HOME in /etc/profile
+  lineinfile:
+    path: /etc/profile
+    regexp: '^export JAVA_HOME='
+    line: "export JAVA_HOME={{ java_path.stdout | trim }}"
+    create: yes
+    state: present
+
+- name: Source profile (for future sessions)
+  shell: source /etc/profile
+  ignore_errors: yes
+
+- name: Download Druid
+  get_url:
+    url: https://archive.apache.org/dist/druid/28.0.0/apache-druid-28.0.0-bin.tar.gz
+    dest: /opt/apache-druid-28.0.0-bin.tar.gz
+
+- name: Extract Druid
+  unarchive:
+    src: /opt/apache-druid-28.0.0-bin.tar.gz
+    dest: /opt/
+    remote_src: yes
+
+- name: Symlink druid dir
+  file:
+    src: /opt/apache-druid-28.0.0
+    dest: /opt/druid
+    state: link
+
+- name: Symlink druid config dir
+  file:
+    src: /opt/apache-druid-28.0.0/conf/druid/single-server/micro-quickstart
+    dest: /opt/apache-druid-28.0.0/conf/druid/single-server/current
+    state: link
+
+- name: Download MySQL JDBC driver
+  get_url:
+    url: https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.2.0/mysql-connector-j-8.2.0.jar
+    dest: /opt/druid/extensions/mysql-metadata-storage/mysql-connector-j-8.2.0.jar
+
+- name: Copy Druid common.runtime.properties
+  template:
+    src: common.runtime.properties.j2
+    dest: /opt/druid/conf/druid/single-server/current/_common/common.runtime.properties
+
+- name: Copy systemd services
+  template:
+    src: "systemd/{{ item }}.service.j2"
+    dest: "/etc/systemd/system/{{ item }}.service"
+  loop:
+    - broker
+    - coordinator
+    - historical
+    - middlemanager
+    - router
+
+- name: Reload systemd
+  command: systemctl daemon-reexec
+
+- name: Enable and start Druid services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop:
+    - broker
+    - coordinator
+    - historical
+    - middlemanager
+    - router

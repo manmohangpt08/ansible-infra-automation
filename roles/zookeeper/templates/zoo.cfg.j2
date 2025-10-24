@@ -1,0 +1,9 @@
+tickTime=2000
+initLimit=10
+syncLimit=5
+4lw.commands.whitelist=ruok,stat,mntr
+dataDir=/var/log/zookeeper
+clientPort=2181
+{% for host in groups['zookeeper'] %}
+server.{{ hostvars[host]['myid'] }}={{ hostvars[host]['private_ip'] }}:2888:3888
+{% endfor %}

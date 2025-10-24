@@ -1,0 +1,26 @@
+[zookeeper]
+node1 ansible_host=<PUBLIC_IP_ADDRESS> private_ip=<PRIVATE_IP_ADDRESS> myid=1
+node2 ansible_host=<PUBLIC_IP_ADDRESS> private_ip=<PRIVATE_IP_ADDRESS> myid=2
+node3 ansible_host=<PUBLIC_IP_ADDRESS> private_ip=<PRIVATE_IP_ADDRESS> myid=3
+
+[kafka]
+node1 ansible_host=<PUBLIC_IP_ADDRESS> private_ip=<PRIVATE_IP_ADDRESS> myid=1
+node2 ansible_host=<PUBLIC_IP_ADDRESS> private_ip=<PRIVATE_IP_ADDRESS> myid=2
+node3 ansible_host=<PUBLIC_IP_ADDRESS> private_ip=<PRIVATE_IP_ADDRESS> myid=3
+
+[druid_all]
+node1
+node2
+node3
+
+[druid_master]
+node1
+
+[druid_data]
+node3
+
+[druid_query]
+node2
+
+[mysql_host]
+node1

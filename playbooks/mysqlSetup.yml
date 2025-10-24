@@ -1,0 +1,5 @@
+- name: Setup MySQL for Druid
+  hosts: mysql_host
+  become: yes
+  roles:
+    - mysql

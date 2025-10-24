@@ -1,0 +1,93 @@
+- name: Install Java and EPEL
+  yum:
+    name:
+      - epel-release
+      - java-11-openjdk
+      - vim
+      - tar
+      - zip
+      - unzip
+      - nc
+      - net-tools
+    state: present
+
+- name: Get JAVA_HOME dynamically
+  shell: |
+    readlink -f $(which java) | sed 's:/bin/java::'
+  register: java_home_shell
+
+- name: Set JAVA_HOME in /etc/profile for all users
+  lineinfile:
+    path: /etc/profile
+    line: "export JAVA_HOME={{ java_home_shell.stdout }}"
+    state: present
+    create: yes
+
+- name: Source /etc/profile (optional if not rebooting)
+  shell: source /etc/profile
+  args:
+    executable: /bin/bash
+
+- name: Update /etc/hosts with all Zookeeper nodes (IP and hostname)
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ hostvars[item]['private_ip'] }} {{ item }}"
+    state: present
+  loop: "{{ groups['zookeeper'] }}"
+
+- name: Download ZooKeeper tarball
+  get_url:
+    url: "{{ zookeeper_url }}"
+    dest: "/opt/{{ zookeeper_tarball }}"
+    mode: '0644'
+
+- name: Extract ZooKeeper
+  unarchive:
+    src: "/opt/{{ zookeeper_tarball }}"
+    dest: /opt
+    remote_src: yes
+    creates: "{{ zookeeper_extract_path }}"
+
+- name: Symlink ZooKeeper to /opt/zookeeper
+  file:
+    src: "{{ zookeeper_extract_path }}"
+    dest: "{{ zookeeper_dir }}"
+    state: link
+    force: yes
+
+- name: Create ZooKeeper config directory
+  file:
+    path: "{{ zookeeper_dir }}/conf"
+    state: directory
+    mode: '0755'
+
+- name: Create zoo.cfg from template
+  template:
+    src: zoo.cfg.j2
+    dest: "{{ zookeeper_dir }}/conf/zoo.cfg"
+    mode: '0644'
+
+- name: Create ZooKeeper data directory
+  file:
+    path: /var/log/zookeeper
+    state: directory
+    mode: '0755'
+
+- name: Create myid file
+  copy:
+    content: "{{ myid }}"
+    dest: /var/log/zookeeper/myid
+    mode: '0644'
+
+- name: Deploy ZooKeeper systemd unit
+  template:
+    src: zookeeper.service.j2
+    dest: /etc/systemd/system/zookeeper.service
+    mode: '0644'
+
+- name: Reload systemd and start ZooKeeper
+  systemd:
+    name: zookeeper
+    enabled: yes
+    state: started
+    daemon_reload: yes

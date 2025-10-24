@@ -1,0 +1,23 @@
+[Unit]
+Description=Druid Broker
+Requires=network.target remote-fs.target
+After=network.target remote-fs.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/druid/
+Environment="DRUID_HOME=/opt/druid"
+Environment="CONFIG_DIR=/opt/druid/conf/druid/single-server/current"
+Environment="COMMOM_DIR=/opt/druid/conf/druid/single-server/current"
+Environment="MODULE_NAME=broker"
+EnvironmentFile=/opt/druid/conf/druid/single-server/current/broker/jvm.config
+
+ExecStart=/usr/bin/java -cp /opt/druid/conf/druid/single-server/current/broker:/opt/druid/conf/druid/single-server/current/_common:/opt/druid/lib/* -Djim.config=/opt/druid/conf/druid/single-server/current/broker/jvm.config org.apache.druid.cli.Main server broker
+
+StandardOutput=append:/var/log/druid/broker.log
+StandardError=append:/var/log/druid/broker-error.log
+SyslogIdentifier=druid_broker
+
+[Install]
+WantedBy=multi-user.target

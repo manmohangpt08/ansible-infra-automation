@@ -1,0 +1,21 @@
+---
+- name: "Updating System and Installing Nginx"
+  hosts: remoteServer
+  become: true
+
+  tasks:
+    - name: "Updating System"
+      yum:
+        name: '*'
+        state: latest
+
+    - name: "Installing nginx"
+      yum:
+        name: nginx
+        state: present
+
+    - name: "Starting the Nginx Service"
+      service:
+        name: nginx
+        state: started
+        enabled: true

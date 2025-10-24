@@ -1,0 +1,85 @@
+- name: Ensure Java is installed
+  yum:
+    name:
+      - epel-release
+      - java-11-openjdk
+      - vim
+      - tar
+      - zip
+      - unzip
+      - nc
+      - net-tools
+    state: present
+
+- name: Find JAVA_HOME dynamically
+  shell: dirname $(dirname $(readlink -f $(which java)))
+  register: java_path
+
+- name: Set JAVA_HOME in /etc/profile
+  lineinfile:
+    path: /etc/profile
+    regexp: '^export JAVA_HOME='
+    line: "export JAVA_HOME={{ java_path.stdout | trim }}"
+    create: yes
+    state: present
+
+- name: Source profile (for future sessions)
+  shell: source /etc/profile
+  ignore_errors: yes
+
+- name: Download Kafka tarball
+  get_url:
+    url: "{{ kafka_url }}"
+    dest: "/opt/{{ kafka_tarball }}"
+    mode: '0644'
+
+- name: Extract Kafka tarball
+  unarchive:
+    src: "/opt/{{ kafka_tarball }}"
+    dest: /opt
+    remote_src: yes
+    creates: "{{ kafka_extract_dir }}"
+
+- name: Create symlink to /opt/kafka
+  file:
+    src: "{{ kafka_extract_dir }}"
+    dest: "{{ kafka_symlink }}"
+    state: link
+    force: yes
+
+- name: Ensure /var/log/kafka exists
+  file:
+    path: /var/log/kafka
+    state: directory
+    owner: root
+    mode: '0755'
+
+- name: Generate Kafka server.properties
+  template:
+    src: server.properties.j2
+    dest: "{{ kafka_symlink }}/config/server.properties"
+    mode: '0644'
+
+- name: Deploy Kafka systemd service
+  template:
+    src: kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+    mode: '0644'
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start Kafka service
+  systemd:
+    name: kafka
+    enabled: yes
+    state: started
+
+- name: Update /etc/hosts file
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ hostvars[item].private_ip }} {{ item }}"
+    state: present
+  loop: "{{ groups['kafka'] }}"
+  when: hostvars[item].private_ip is defined
